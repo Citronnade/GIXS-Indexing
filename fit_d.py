@@ -60,17 +60,10 @@ def create_vec_generator(H_max=10, K_max=10, noise=0):
                 temp[i] = d
                 i += 1
         if noise:
-            noise_arr = [(1 - t.rvs(1))[0] for x in range(30)]
+            noise_arr = 1 - t.rvs(30)
             temp *= noise_arr
 
         indices = np.argsort(temp[temp != 0])[:30]
-        '''
-        pr.disable()
-        s = io.StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())'''
         return np.array(temp[indices])
     return f
 

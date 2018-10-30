@@ -51,7 +51,7 @@ if __name__ == '__main__':
     #logger = Logger("logs")
 
     yTr = torch.Tensor(fit_d.gen_input(1000))
-    xTr = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=0.02), yTr)))
+    xTr = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=noise), yTr)))
 
     model = SimpleNet()
     criterion = nn.MSELoss()
