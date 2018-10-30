@@ -7,6 +7,10 @@ import fit_d
 import numpy as np
 from sklearn import preprocessing
 from matplotlib import pyplot as plt
+
+import cProfile, pstats, io
+from pstats import SortKey
+pr = cProfile.Profile()
 #from logger import Logger
 
 class SimpleNet(torch.nn.Module):
@@ -43,8 +47,10 @@ class SimpleNet(torch.nn.Module):
 
 
 if __name__ == '__main__':
+    noise = 0
     #logger = Logger("logs")
-    yTr = torch.Tensor(fit_d.gen_input(100000))
+
+    yTr = torch.Tensor(fit_d.gen_input(1000))
     xTr = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=0.02), yTr)))
 
     model = SimpleNet()
@@ -53,19 +59,12 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters())
     #optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99, nesterov=True)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.25)
     scaler = preprocessing.StandardScaler().fit(xTr)
-    xTr = torch.Tensor(scaler.transform(xTr))
-    print(xTr)
-    dataset = torch.utils.data.TensorDataset(xTr, yTr)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True)
-
-    yTe = torch.Tensor(fit_d.gen_input(1000))
-    xTe = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=0.01), yTe)))
-    xTe = torch.Tensor(scaler.transform(xTe))
-
-    test_dataset = torch.utils.data.TensorDataset(xTe, yTe)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset)
+    #xTr = torch.Tensor(scaler.transform(xTr))
+    #print(xTr)
+    #dataset = torch.utils.data.TensorDataset(xTr, yTr)
+    #dataloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True)
 
 
     known_y = np.array([.65, 1.2, np.radians(111)]).reshape(1,-1)
@@ -73,23 +72,56 @@ if __name__ == '__main__':
     known_x = scaler.transform(known_x.reshape(1,-1))
     known_x = torch.Tensor(known_x)
     print(known_x)
-    
-    for epoch in range(50):
+
+
+    generator = fit_d.create_vec_generator(noise=noise)
+    for epoch in range(150):
+        #1000 iterations in an epoch?
         running_loss = 0
+        # TODO: add scaling back in here...
+        #for iteration in range(1000):
+        yTr = torch.Tensor(fit_d.gen_input(10000))
+        xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
+        xTr = torch.Tensor(scaler.transform(xTr))
+        dataset = torch.utils.data.TensorDataset(xTr, yTr)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True)
+
         for inputs, labels in dataloader:
+
+            #pr.enable()
+            #labels = torch.Tensor(fit_d.gen_input(48))
+            #print(iteration)
+            #inputs = torch.Tensor(list(map(lambda x: generator(*x), labels)))
+        #for inputs, labels in dataloader:
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+        running_loss /= len(dataloader)
         info = {
             'loss_' : running_loss
-            }
+        }
+        """
+        pr.disable()
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        """
         #for tag, value in info.items():
         #    logger.scalar_summary(tag, value, epoch+1)
         print("Epoch {0}: loss {1}".format(epoch, running_loss))
         scheduler.step()
+
+    yTe = torch.Tensor(fit_d.gen_input(1000))
+    xTe = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=noise), yTe)))
+    xTe = torch.Tensor(scaler.transform(xTe))
+
+    test_dataset = torch.utils.data.TensorDataset(xTe, yTe)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset)
 
     model.eval()
     preds = torch.Tensor()
@@ -112,11 +144,12 @@ if __name__ == '__main__':
     g = np.radians(111)
 
     predicted_params = model(known_x).detach().numpy()[0]
+    print("params:", predicted_params)
     a2 = predicted_params[0]
     b2 = predicted_params[1]
     g2 = predicted_params[2]
     actual_qs = 1/ np.array(fit_d.gen_d_vector(a,b,g))
-    pred_qs = 1 / np.array(fit_d.gen_d_vector(a2,b2,g2, H_max = 20, K_max = 20))
+    pred_qs = 1 / np.array(fit_d.gen_d_vector(a2,b2,g2, H_max = 10, K_max = 10))
     for M in range(-3, 3):
         for N in range(-3, 3):
             #if M == 0 and N == 0:

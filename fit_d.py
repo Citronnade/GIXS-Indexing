@@ -4,11 +4,76 @@ from matplotlib import pyplot as plt
 from scipy.optimize import basinhopping
 from sklearn import preprocessing
 from scipy.stats import truncnorm
+import math
 
 import torch.nn as nn
+import cProfile, pstats, io
+from pstats import SortKey
+pr = cProfile.Profile()
+
+
+#TODO: VECTORIZE!
+def create_d_generator(a,b,gamma):
+    top = np.sin(gamma)
+    t1 = a ** 2
+    t2 = b ** 2
+    t3 = 2 * np.cos(gamma) / (a*b)
+    def f(H, K):
+        return top / math.sqrt(H**2 / t1 + K**2 / t2 - H*K*t3)
+    return f
 
 def gen_d(a,b,gamma,H,K):
     return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
+
+def create_vec_generator(H_max=10, K_max=10, noise=0):
+    """
+    Returns a function that generates a Torch tensor of the vectors.
+    :param a:
+    :param b:
+    :param gamma:
+    :param H_max:
+    :param K_max:
+    :param noise:
+    :return:
+    """
+    if noise:
+        t = truncnorm(-noise, noise)
+        #noise_amt = (1-t.rvs(1)[0])
+    def f(a,b, gamma):
+
+        #pr.enable()
+        d_generator = create_d_generator(a,b,gamma)
+        temp = np.zeros(2 * H_max * K_max)
+        #temp2 = np.zeros(2 * H_max * K_max)
+        i = 0
+        # gaussian = np.random.normal(1, noise)
+        for H in range(-H_max, H_max):
+            for K in range(0, H + 1):
+                if H == 0 and K == 0:
+                    continue
+                #d = gen_d(a, b, gamma, H, K)
+                d = d_generator(H,K)
+                # if noise:
+                #    temp2[i] = d * noise_amt
+                # else:
+                #    temp2[i] = d
+                temp[i] = d
+                i += 1
+        if noise:
+            noise_arr = [(1 - t.rvs(1))[0] for x in range(30)]
+            temp *= noise_arr
+
+        indices = np.argsort(temp[temp != 0])[:30]
+        '''
+        pr.disable()
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())'''
+        return np.array(temp[indices])
+    return f
+
 
 def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0):
     temp = np.zeros(2*H_max*K_max)
@@ -17,15 +82,18 @@ def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0):
     #gaussian = np.random.normal(1, noise)
     if noise:
         t = truncnorm(-noise, noise)
+        noise_amt = (1-t.rvs(1)[0])
     for H in range(-H_max, H_max):
         for K in range(0, H+1):
             if H == 0 and K == 0:
                 continue
             d = gen_d(a, b, gamma, H, K)
+            #if noise:
+            #    temp2[i] = d * noise_amt
+            #else:
+            #    temp2[i] = d
             if noise:
-                temp2[i] = d * (1- t.rvs(1)[0])
-            else:
-                temp2[i] = d
+                temp2 *= noise_amt
             temp[i] = d
             i+=1
     indices = np.argsort(temp[temp != 0])[:30]
