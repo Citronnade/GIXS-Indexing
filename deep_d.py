@@ -60,11 +60,21 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters())
     #optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99, nesterov=True)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.25)
-    scaler = preprocessing.StandardScaler().fit(xTr)
+
     #xTr = torch.Tensor(scaler.transform(xTr))
     #print(xTr)
     #dataset = torch.utils.data.TensorDataset(xTr, yTr)
     #dataloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True)
+
+
+    generator = fit_d.create_vec_generator(noise=0.01)
+    yTr = torch.Tensor(fit_d.gen_input(20000))
+
+    xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
+    scaler = preprocessing.StandardScaler().fit(xTr)
+    xTr = torch.Tensor(scaler.transform(xTr))
+    dataset = torch.utils.data.TensorDataset(xTr, yTr)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True)
 
 
     known_y = np.array([.65, 1.2, np.radians(111)]).reshape(1,-1)
@@ -73,15 +83,16 @@ if __name__ == '__main__':
     known_x = torch.Tensor(known_x)
     print(known_x)
 
-
-    generator = fit_d.create_vec_generator(noise=noise)
     for epoch in range(150):
         #1000 iterations in an epoch?
         running_loss = 0
         # TODO: add scaling back in here...
         #for iteration in range(1000):
-        yTr = torch.Tensor(fit_d.gen_input(10000))
+
+        yTr = torch.Tensor(fit_d.gen_input(20000))
+
         xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
+        scaler = preprocessing.StandardScaler().fit(xTr)
         xTr = torch.Tensor(scaler.transform(xTr))
         dataset = torch.utils.data.TensorDataset(xTr, yTr)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True)
