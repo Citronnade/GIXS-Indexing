@@ -59,11 +59,10 @@ def create_vec_generator(H_max=10, K_max=10, noise=0):
                 #    temp2[i] = d
                 temp[i] = d
                 i += 1
+        indices = np.argsort(temp[temp != 0])[:30]
         if noise:
             noise_arr = 1 - t.rvs(30)
-            temp *= noise_arr
-
-        indices = np.argsort(temp[temp != 0])[:30]
+            return np.array(temp[indices]) * noise_arr
         return np.array(temp[indices])
     return f
 
