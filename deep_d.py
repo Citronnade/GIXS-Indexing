@@ -16,50 +16,61 @@ pr = cProfile.Profile()
 class SimpleNet(torch.nn.Module):
     def __init__(self):
         super(SimpleNet, self).__init__()
-        self.linear1 = nn.Linear(30, 150)
-        self.bn1 = nn.BatchNorm1d(150)
-        self.bn2 = nn.BatchNorm1d(150)
-        self.bn3 = nn.BatchNorm1d(150)
+        self.bn1 = nn.BatchNorm1d(350)
+        self.bn2 = nn.BatchNorm1d(350)
+        self.bn3 = nn.BatchNorm1d(250)
         self.bn4 = nn.BatchNorm1d(100)
-        self.hidden1 = nn.Linear(150, 150)
-        self.hidden2 = nn.Linear(150, 150)
-        self.hidden3 = nn.Linear(150, 100)
-        self.linear2 = nn.Linear(100, 3)
-        
 
+        self.linear1 = nn.Linear(5, 350)
+        self.hidden1 = nn.Linear(350, 350)
+        self.hidden2 = nn.Linear(350, 250)
+        self.hidden3 = nn.Linear(250, 100)
+        self.linear2 = nn.Linear(100, 3)
 
 
     def forward(self, x):
         x = self.linear1(x)
-        x = F.relu(x)
-        #x = F.relu(self.bn1(x))
+        #x = F.relu(x)
+        x = F.relu(self.bn1(x))
         x = self.hidden1(x)
-        #x = F.relu(self.bn2(x))
-        x = F.relu(x)
+        x = F.relu(self.bn2(x))
+        #x = F.relu(x)
         x = self.hidden2(x)
-        #x = F.relu(self.bn3(x))
-        x = F.relu(x)
+        x = F.relu(self.bn3(x))
+        #x = F.relu(x)
         x = self.hidden3(x)
-        #x = F.relu(self.bn4(x))
-        x = F.relu(x)
+        x = F.relu(self.bn4(x))
+        #x = F.relu(x)
         x = self.linear2(x)
         return x
 
 
+class LSTMNet(torch.nn.Module):
+    def __init__(self):
+        super(LSTMNet, self).__init__()
+        self.lstm = nn.LSTM(1, 50, 2, batch_first=True)
+        self.hidden = None
+        self.last_linear = nn.Linear(30*50, 3)
+
+    def forward(self, x):
+        out, self.hidden = self.lstm(x)
+        out = out.contiguous().view(out.shape[0], -1)
+        out = self.last_linear(out)
+        return out
+
+
 if __name__ == '__main__':
-    noise = 0
+    noise = 0.01
     #logger = Logger("logs")
-
-    yTr = torch.Tensor(fit_d.gen_input(1000))
-    xTr = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=noise), yTr)))
-
     model = SimpleNet()
+    #model = LSTMNet()
+    #model = nn.LSTM(1, 50, 2)
     criterion = nn.MSELoss()
     #criterion = nn.L1Loss()
 
     optimizer = optim.Adam(model.parameters())
     #optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99, nesterov=True)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.25)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20*10, gamma=0.25)
 
     #xTr = torch.Tensor(scaler.transform(xTr))
     #print(xTr)
@@ -67,8 +78,8 @@ if __name__ == '__main__':
     #dataloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True)
 
 
-    generator = fit_d.create_vec_generator(noise=0.01)
-    yTr = torch.Tensor(fit_d.gen_input(20000))
+    generator = fit_d.create_vec_generator(noise=noise, dropout=True)
+    yTr = torch.Tensor(fit_d.gen_input(5000))
 
     xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
     scaler = preprocessing.StandardScaler().fit(xTr)
@@ -83,20 +94,22 @@ if __name__ == '__main__':
     known_x = torch.Tensor(known_x)
     print(known_x)
 
-    for epoch in range(150):
+
+    for epoch in range(75
+
+                       ):
         #1000 iterations in an epoch?
         running_loss = 0
         # TODO: add scaling back in here...
         #for iteration in range(1000):
 
-        yTr = torch.Tensor(fit_d.gen_input(20000))
-
+        yTr = torch.Tensor(fit_d.gen_input(15000))
         xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
-        scaler = preprocessing.StandardScaler().fit(xTr)
+        #scaler = preprocessing.StandardScaler().fit(xTr)
         xTr = torch.Tensor(scaler.transform(xTr))
         dataset = torch.utils.data.TensorDataset(xTr, yTr)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True)
-
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=192, shuffle=True)
+        #hidden = None
         for inputs, labels in dataloader:
 
             #pr.enable()
@@ -105,7 +118,10 @@ if __name__ == '__main__':
             #inputs = torch.Tensor(list(map(lambda x: generator(*x), labels)))
         #for inputs, labels in dataloader:
             optimizer.zero_grad()
+
+            #inputs = inputs.unsqueeze(-1)
             outputs = model(inputs)
+            #outputs, hidden = model(inputs, hidden)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -128,7 +144,7 @@ if __name__ == '__main__':
         scheduler.step()
 
     yTe = torch.Tensor(fit_d.gen_input(1000))
-    xTe = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=noise), yTe)))
+    xTe = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=0.01), yTe)))
     xTe = torch.Tensor(scaler.transform(xTe))
 
     test_dataset = torch.utils.data.TensorDataset(xTe, yTe)
@@ -136,10 +152,17 @@ if __name__ == '__main__':
 
     model.eval()
     preds = torch.Tensor()
+    i = 0
     for inputs, labels in test_dataloader:
+        #inputs = inputs.unsqueeze(-1)
         optimizer.zero_grad()
         outputs = model(inputs)
         preds = torch.cat((preds, outputs), 0)
+        i+=1
+        #if i % 15 == 0:
+        print("results:")
+        print(preds)
+        print(yTe)
 
     print("average test error:", torch.mean(preds - yTe))
 
@@ -153,7 +176,7 @@ if __name__ == '__main__':
     a = 0.65
     b = 1.2
     g = np.radians(111)
-
+    #known_x = known_x.unsqueeze(-1)
     predicted_params = model(known_x).detach().numpy()[0]
     print("params:", predicted_params)
     a2 = predicted_params[0]

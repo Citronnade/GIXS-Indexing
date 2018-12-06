@@ -25,7 +25,7 @@ def create_d_generator(a,b,gamma):
 def gen_d(a,b,gamma,H,K):
     return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
 
-def create_vec_generator(H_max=10, K_max=10, noise=0):
+def create_vec_generator(H_max=10, K_max=10, noise=0, dropout=True):
     """
     Returns a function that generates a Torch tensor of the vectors.
     :param a:
@@ -53,21 +53,28 @@ def create_vec_generator(H_max=10, K_max=10, noise=0):
                     continue
                 #d = gen_d(a, b, gamma, H, K)
                 d = d_generator(H,K)
-                # if noise:
-                #    temp2[i] = d * noise_amt
-                # else:
-                #    temp2[i] = d
                 temp[i] = d
                 i += 1
         indices = np.argsort(temp[temp != 0])[:30]
         if noise:
             noise_arr = 1 - t.rvs(30)
+        else:
+            noise_arr = 1
+            #return np.array(temp[indices]) * noise_arr
+
+        if dropout:
+            out = np.array(temp[indices])
+            if np.random.randint(2):
+                start = np.random.randint(15, 30)
+                out[start:] = 0#-5
+            return out * noise_arr
+        else:
             return np.array(temp[indices]) * noise_arr
-        return np.array(temp[indices])
+
     return f
 
 
-def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0):
+def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0, dropout=False):
     temp = np.zeros(2*H_max*K_max)
     temp2 = np.zeros(2*H_max*K_max)
     i=0
@@ -88,9 +95,15 @@ def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0):
                 temp2 *= noise_amt
             temp[i] = d
             i+=1
-    indices = np.argsort(temp[temp != 0])[:30]
-    
-    return np.array(temp[indices])
+    indices = np.argsort(temp[temp != 0])[:5]#:30
+    if dropout:
+        out = np.array(temp[indices])
+        if True: #np.random.randint(2):
+            start = np.random.randint(15,30)
+            out[start:] = 0 #-5
+        return out
+    else:
+        return np.array(temp[indices])
 
 def gen_input(n):
     #a: 0.3-1.5
