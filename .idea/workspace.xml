@@ -2,10 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2b3fd0a2-c85a-432e-806d-29e28ee245b4" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/evaluate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deep_d.py" beforeDir="false" afterPath="$PROJECT_DIR$/deep_d.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evaluate.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluate.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fit_d.py" beforeDir="false" afterPath="$PROJECT_DIR$/fit_d.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model.pth" beforeDir="false" afterPath="$PROJECT_DIR$/model.pth" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -29,22 +32,24 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="5" />
+          <entry key="py" value="6" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="5" />
+          <entry key="Python" value="6" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="8758" />
+          <entry key="gitignore" value="85" />
+          <entry key="py" value="13610" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="8758" />
+          <entry key="PLAIN_TEXT" value="85" />
+          <entry key="Python" value="13610" />
         </counts>
       </usages-collector>
     </session>
@@ -53,20 +58,34 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="450">
-          <file pinned="false" current-in-tab="false">
+          <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/.gitignore">
-              <provider selected="true" editor-type-id="text-editor" />
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="856">
+                  <caret line="107" lean-forward="true" selection-start-line="107" selection-end-line="107" />
+                </state>
+              </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/deep_d.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="31">
-                  <caret line="115" column="8" selection-start-line="115" selection-start-column="8" selection-end-line="115" selection-end-column="8" />
+                <state relative-caret-position="620">
+                  <caret line="65" column="20" selection-start-line="65" selection-start-column="20" selection-end-line="65" selection-end-column="20" />
                   <folding>
-                    <element signature="e#0#12#0" expanded="true" />
-                    <marker date="1548365266528" expanded="true" signature="959:965" ph="..." />
+                    <element signature="e#0#33#0" expanded="true" />
+                    <marker date="1548792445665" expanded="true" signature="969:1035" ph="..." />
+                    <marker date="1548792445665" expanded="true" signature="2616:2617" ph="..." />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/main.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="31">
+                  <caret line="1" selection-start-line="1" selection-end-line="1" />
                 </state>
               </provider>
             </entry>
@@ -74,8 +93,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/fit_d.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1767">
-                  <caret line="57" column="102" selection-start-line="57" selection-start-column="102" selection-end-line="57" selection-end-column="102" />
+                <state relative-caret-position="-2616">
+                  <caret column="18" lean-forward="true" selection-start-column="18" selection-end-column="18" />
                 </state>
               </provider>
             </entry>
@@ -83,10 +102,10 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/evaluate.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="837">
-                  <caret line="34" column="24" selection-start-line="34" selection-start-column="24" selection-end-line="34" selection-end-column="24" />
+                <state relative-caret-position="-1209">
+                  <caret line="32" column="52" selection-start-line="32" selection-start-column="52" selection-end-line="32" selection-end-column="52" />
                   <folding>
-                    <element signature="e#0#26#0" expanded="true" />
+                    <element signature="e#0#18#0" expanded="true" />
                   </folding>
                 </state>
               </provider>
@@ -111,11 +130,12 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/deep_d.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="329">
-                  <caret line="147" column="23" selection-start-line="147" selection-start-column="23" selection-end-line="147" selection-end-column="23" />
+                <state relative-caret-position="-655">
+                  <caret line="81" column="86" selection-start-line="81" selection-start-column="86" selection-end-line="81" selection-end-column="86" />
                   <folding>
-                    <element signature="e#0#12#0" expanded="true" />
-                    <marker date="1548365266528" expanded="true" signature="959:965" ph="..." />
+                    <element signature="e#0#33#0" expanded="true" />
+                    <marker date="1548792445665" expanded="true" signature="969:1035" ph="..." />
+                    <marker date="1548792445665" expanded="true" signature="2616:2617" ph="..." />
                   </folding>
                 </state>
               </provider>
@@ -136,8 +156,6 @@
     <findStrings>
       <find>gen_d(</find>
       <find>sqrt</find>
-      <find>generator</find>
-      <find>scaler</find>
       <find>temp2</find>
       <find>batch</find>
       <find>temp *=</find>
@@ -158,6 +176,12 @@
       <find>gen_d</find>
       <find>known</find>
       <find>print</find>
+      <find>known_x</find>
+      <find>generator</find>
+      <find>scaler</find>
+      <find>known_params</find>
+      <find>gamma_scheduler</find>
+      <find>gen_f</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -167,9 +191,11 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/evaluate2.py" />
-        <option value="$PROJECT_DIR$/evaluate.py" />
+        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/fit_d.py" />
         <option value="$PROJECT_DIR$/deep_d.py" />
+        <option value="$PROJECT_DIR$/evaluate.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -263,26 +289,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fit_d.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1767">
-          <caret line="57" column="102" selection-start-line="57" selection-start-column="102" selection-end-line="57" selection-end-column="102" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/evaluate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="837">
-          <caret line="34" column="24" selection-start-line="34" selection-start-column="24" selection-end-line="34" selection-end-column="24" />
-          <folding>
-            <element signature="e#0#26#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/evaluate2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="155">
@@ -293,14 +299,46 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/fit_d.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2616">
+          <caret column="18" lean-forward="true" selection-start-column="18" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/evaluate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1209">
+          <caret line="32" column="52" selection-start-line="32" selection-start-column="52" selection-end-line="32" selection-end-column="52" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="31">
+          <caret line="1" selection-start-line="1" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/deep_d.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="329">
-          <caret line="147" column="23" selection-start-line="147" selection-start-column="23" selection-end-line="147" selection-end-column="23" />
+        <state relative-caret-position="620">
+          <caret line="65" column="20" selection-start-line="65" selection-start-column="20" selection-end-line="65" selection-end-column="20" />
           <folding>
-            <element signature="e#0#12#0" expanded="true" />
-            <marker date="1548365266528" expanded="true" signature="959:965" ph="..." />
+            <element signature="e#0#33#0" expanded="true" />
+            <marker date="1548792445665" expanded="true" signature="969:1035" ph="..." />
+            <marker date="1548792445665" expanded="true" signature="2616:2617" ph="..." />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="856">
+          <caret line="107" lean-forward="true" selection-start-line="107" selection-end-line="107" />
         </state>
       </provider>
     </entry>

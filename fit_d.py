@@ -4,12 +4,12 @@ import numpy as np
 def gen_d(a,b,gamma,H,K):
     """
     Helper function to take in a,b,gamma values or vectors and produce a d-spacing corresponding to a specific H or K.
-    :param a:
-    :param b:
-    :param gamma:
-    :param H:
-    :param K:
-    :return:
+    :param a: value of a for the observation
+    :param b: value of b for the observation
+    :param gamma: value of gamma for the observation
+    :param H: value of H to calculate spacing for
+    :param K: value of K to calculate spacing for
+    :return: A single number representing the observed d-spacing for the given a,b,gamma,H,K
     """
     return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
 
@@ -51,17 +51,17 @@ class dSpaceGenerator:
                 d = top / np.sqrt(H ** 2 / t1 + K ** 2 / t2 - H *  K * t3)
                 temp[i] = d
                 i += 1
-        temp = temp.T
+        temp = temp.T # we need to transpose to sort in the right axis later
         temp[temp==0] = 2000 #sometimes we get a d-spacing of 0, ignore these when sorting
 
         indices = np.argsort(temp)[:, :self.num_spacings] #get the indices of the num_spacings lowest d-spacings for each observation
         return np.take_along_axis(temp, indices, axis=1) # get the actual lowest d-spacings and return
 
 def gen_input(n):
-    #a: 0.3-1.5
-    #b: 0.5-2.5
-    #gamma: 85-130
     """
+    a range: 0.3-1.5
+    b range: 0.5-2.5
+    gamma range: 85-130 (degrees)
     Generates random vectors of a,b,gamma for use in network training.
     :param n: Number of observations to generate
     :return: n x 3 vector of a,b, gamma observations
