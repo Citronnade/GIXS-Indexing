@@ -14,14 +14,17 @@ pr = cProfile.Profile()
 #from logger import Logger
 
 class SimpleNet(torch.nn.Module):
-    def __init__(self):
+    """
+    SimpleNet is a fairly shallow fully connected network with batch normalization.
+    """
+    def __init__(self, num_spacings=8):
         super(SimpleNet, self).__init__()
-        self.bn1 = nn.BatchNorm1d(350)
+        self.bn1 = nn.BatchNorm1d(350) #batchnorm layers aid in training
         self.bn2 = nn.BatchNorm1d(350)
         self.bn3 = nn.BatchNorm1d(250)
         self.bn4 = nn.BatchNorm1d(100)
 
-        self.linear1 = nn.Linear(5, 350)
+        self.linear1 = nn.Linear(num_spacings, 350)
         self.hidden1 = nn.Linear(350, 350)
         self.hidden2 = nn.Linear(350, 250)
         self.hidden3 = nn.Linear(250, 100)
@@ -30,17 +33,17 @@ class SimpleNet(torch.nn.Module):
 
     def forward(self, x):
         x = self.linear1(x)
-        #x = F.relu(x)
         x = F.relu(self.bn1(x))
+
         x = self.hidden1(x)
         x = F.relu(self.bn2(x))
-        #x = F.relu(x)
+
         x = self.hidden2(x)
         x = F.relu(self.bn3(x))
-        #x = F.relu(x)
+
         x = self.hidden3(x)
         x = F.relu(self.bn4(x))
-        #x = F.relu(x)
+
         x = self.linear2(x)
         return x
 
@@ -61,96 +64,67 @@ class LSTMNet(torch.nn.Module):
 
 if __name__ == '__main__':
     noise = 0.01
-    #logger = Logger("logs")
     model = SimpleNet()
-    #model = LSTMNet()
-    #model = nn.LSTM(1, 50, 2)
     criterion = nn.MSELoss()
-    #criterion = nn.L1Loss()
-
     optimizer = optim.Adam(model.parameters())
-    #optimizer = optim.SGD(model.parameters(), lr=1e-4, momentum=0.99, nesterov=True)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20*10, gamma=0.25)
-
-    #xTr = torch.Tensor(scaler.transform(xTr))
-    #print(xTr)
-    #dataset = torch.utils.data.TensorDataset(xTr, yTr)
-    #dataloader = torch.utils.data.DataLoader(dataset, batch_size=30, shuffle=True)
-
-
-    generator = fit_d.create_vec_generator(noise=noise, dropout=True)
+    generator = fit_d.dSpaceGenerator()
     yTr = torch.Tensor(fit_d.gen_input(5000))
 
-    xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
-    scaler = preprocessing.StandardScaler().fit(xTr)
+    xTr = torch.Tensor(generator(yTr)) #first generate input to scale
+    scaler = preprocessing.StandardScaler().fit(xTr) #0-1 normalization is essential
     xTr = torch.Tensor(scaler.transform(xTr))
-    dataset = torch.utils.data.TensorDataset(xTr, yTr)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True)
+    dataset = torch.utils.data.TensorDataset(xTr, yTr) # sets up the data for torch
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=96, shuffle=True) #minibatch size of 96
 
 
     known_y = np.array([.65, 1.2, np.radians(111)]).reshape(1,-1)
-    known_x = np.array(fit_d.gen_d_vector(*known_y[0]))
+    known_x = generator(known_y)#np.array(fit_d.gen_d_vector(*known_y[0]))
+
     known_x = scaler.transform(known_x.reshape(1,-1))
     known_x = torch.Tensor(known_x)
     print(known_x)
 
 
-    for epoch in range(75
-
-                       ):
+    for epoch in range(75):
+        # The primary training loop
         #1000 iterations in an epoch?
         running_loss = 0
-        # TODO: add scaling back in here...
-        #for iteration in range(1000):
-
-        yTr = torch.Tensor(fit_d.gen_input(15000))
-        xTr = torch.Tensor(list(map(lambda x: generator(*x), yTr)))
+        yTr = torch.Tensor(fit_d.gen_input(15000)) #each loop we generate 15000 training inputs
+        xTr = torch.Tensor(generator(yTr))
         #scaler = preprocessing.StandardScaler().fit(xTr)
         xTr = torch.Tensor(scaler.transform(xTr))
         dataset = torch.utils.data.TensorDataset(xTr, yTr)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=192, shuffle=True)
         #hidden = None
         for inputs, labels in dataloader:
-
-            #pr.enable()
-            #labels = torch.Tensor(fit_d.gen_input(48))
-            #print(iteration)
-            #inputs = torch.Tensor(list(map(lambda x: generator(*x), labels)))
-        #for inputs, labels in dataloader:
-            optimizer.zero_grad()
+            #Iteration through the dataset
+            optimizer.zero_grad() # must clear gradients from previous iteration before current
 
             #inputs = inputs.unsqueeze(-1)
-            outputs = model(inputs)
+            outputs = model(inputs) # raw logits from the model
             #outputs, hidden = model(inputs, hidden)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
+            loss = criterion(outputs, labels) # get the error
+            loss.backward() # backpropagate the loss
+            optimizer.step() # update model parameters based off the backpropagated loss
+            running_loss += loss.item() # and accumulate the loss so we can track it
         running_loss /= len(dataloader)
         info = {
             'loss_' : running_loss
         }
-        """
-        pr.disable()
-        s = io.StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
-        """
-        #for tag, value in info.items():
-        #    logger.scalar_summary(tag, value, epoch+1)
         print("Epoch {0}: loss {1}".format(epoch, running_loss))
-        scheduler.step()
+        scheduler.step() #scheduler steps every epoch for learning rate decay
 
     yTe = torch.Tensor(fit_d.gen_input(1000))
-    xTe = torch.Tensor(list(map(lambda x: fit_d.gen_d_vector(*x, noise=0.01), yTe)))
+    xTe = torch.Tensor(generator(yTe))
     xTe = torch.Tensor(scaler.transform(xTe))
 
     test_dataset = torch.utils.data.TensorDataset(xTe, yTe)
     test_dataloader = torch.utils.data.DataLoader(test_dataset)
 
-    model.eval()
+
+    torch.save(model.state_dict(), "model.pth") # save model weights to a file to be loaded later
+    model.eval() # make sure to set model to eval mode before any predictions--batchnorm has different behavior
     preds = torch.Tensor()
     i = 0
     for inputs, labels in test_dataloader:
@@ -159,10 +133,6 @@ if __name__ == '__main__':
         outputs = model(inputs)
         preds = torch.cat((preds, outputs), 0)
         i+=1
-        #if i % 15 == 0:
-        print("results:")
-        print(preds)
-        print(yTe)
 
     print("average test error:", torch.mean(preds - yTe))
 
@@ -182,8 +152,8 @@ if __name__ == '__main__':
     a2 = predicted_params[0]
     b2 = predicted_params[1]
     g2 = predicted_params[2]
-    actual_qs = 1/ np.array(fit_d.gen_d_vector(a,b,g))
-    pred_qs = 1 / np.array(fit_d.gen_d_vector(a2,b2,g2, H_max = 10, K_max = 10))
+    actual_qs = 1/ generator(np.array([a,b,g]).reshape(1, -1))
+    pred_qs = 1 / generator(predicted_params.reshape(1,-1))
     for M in range(-3, 3):
         for N in range(-3, 3):
             #if M == 0 and N == 0:
@@ -202,7 +172,8 @@ if __name__ == '__main__':
     plt.show()
 
     plt.clf()
-    plt.scatter(actual_qs, [0.5]*len(actual_qs))
-    for q in pred_qs:
+    print(actual_qs.shape)
+    plt.scatter(actual_qs.reshape(-1), [0.5]*len(actual_qs.reshape(-1)))
+    for q in pred_qs.reshape(-1):
         plt.axvline(x=q)
     plt.show()

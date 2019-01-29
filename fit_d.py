@@ -1,175 +1,72 @@
 import numpy as np
-from sklearn.neural_network import MLPRegressor
-from matplotlib import pyplot as plt
-from scipy.optimize import basinhopping
-from sklearn import preprocessing
-from scipy.stats import truncnorm
-import math
 
-import torch.nn as nn
-import cProfile, pstats, io
-from pstats import SortKey
-pr = cProfile.Profile()
-
-
-#TODO: VECTORIZE!
-def create_d_generator(a,b,gamma):
-    top = np.sin(gamma)
-    t1 = a ** 2
-    t2 = b ** 2
-    t3 = 2 * np.cos(gamma) / (a*b)
-    def f(H, K):
-        return top / math.sqrt(H**2 / t1 + K**2 / t2 - H*K*t3)
-    return f
 
 def gen_d(a,b,gamma,H,K):
-    return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
-
-def create_vec_generator(H_max=10, K_max=10, noise=0, dropout=True):
     """
-    Returns a function that generates a Torch tensor of the vectors.
+    Helper function to take in a,b,gamma values or vectors and produce a d-spacing corresponding to a specific H or K.
     :param a:
     :param b:
     :param gamma:
-    :param H_max:
-    :param K_max:
-    :param noise:
+    :param H:
+    :param K:
     :return:
     """
-    if noise:
-        t = truncnorm(-noise, noise)
-        #noise_amt = (1-t.rvs(1)[0])
-    def f(a,b, gamma):
+    return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
 
-        #pr.enable()
-        d_generator = create_d_generator(a,b,gamma)
-        temp = np.zeros(2 * H_max * K_max)
-        #temp2 = np.zeros(2 * H_max * K_max)
+class dSpaceGenerator:
+    def __init__(self, H_max=10, K_max=10, num_spacings=8):
+        """
+        Returns a function that generates a Torch tensor of the vectors.
+        Pydoc will create pretty documentation based off these docstrings.
+        :param H_max: The maximum |H| to search over when generating d-spacings
+        :param K_max: The maximum |K| to search over when generating d-spacings
+        :param noise: Range of truncated normal, which will have range [-noise, noise].  Set to zero to disable addition of random noise.  #TODO: make this normally distributed with SD noise
+        :param dropout: If True, then length of output vector will be truncated with 50% probability
+        :return: A function f(a,b,gamma) that returns an array of the 5 highest d-spacings over the given H_max, K_max range for the given parameters.
+        """
+        self.H_max = H_max
+        self.K_max = K_max
+        self.num_spacings = num_spacings
+
+
+    # __call__ is a builtin function that's called when you try to call an object
+    def __call__(self, lattice_params):
+        """
+        :param self:
+        :param lattice_params: n x 3 vector of [a,b, gamma], with n observations.  Must be at least 2D!
+        :return: The num_spacings highest d spacings corresponding to the given a,b, gamma values, as a n x num_spacings vector.
+        """
+        n, _ = lattice_params.shape
+        t1 = lattice_params[:,0] ** 2 # a**2 vector
+        t2 = lattice_params[:,1] ** 2 # b**2 bector
+        t3 = 2 * np.cos(lattice_params[:, 2]) / (lattice_params[:,0] * lattice_params[:, 1]) # part of the 2hk cos(gamma) vector
+        top = np.sin(lattice_params[:,2]) # part of the sin(gamma) vector
+
+        temp = np.zeros((2 * self.H_max * self.K_max, n)) # temporary vector to store all d-spacings for each a,b,gamma observation
         i = 0
-        # gaussian = np.random.normal(1, noise)
-        for H in range(-H_max, H_max):
+        for H in range(-self.H_max, self.H_max):
             for K in range(0, H + 1):
-                if H == 0 and K == 0:
+                if H == 0 and K == 0: #skip the H==K==0 state
                     continue
-                #d = gen_d(a, b, gamma, H, K)
-                d = d_generator(H,K)
+                d = top / np.sqrt(H ** 2 / t1 + K ** 2 / t2 - H *  K * t3)
                 temp[i] = d
                 i += 1
-        indices = np.argsort(temp[temp != 0])[:30]
-        if noise:
-            noise_arr = 1 - t.rvs(30)
-        else:
-            noise_arr = 1
-            #return np.array(temp[indices]) * noise_arr
+        temp = temp.T
+        temp[temp==0] = 2000 #sometimes we get a d-spacing of 0, ignore these when sorting
 
-        if dropout:
-            out = np.array(temp[indices])
-            if np.random.randint(2):
-                start = np.random.randint(15, 30)
-                out[start:] = 0#-5
-            return out * noise_arr
-        else:
-            return np.array(temp[indices]) * noise_arr
-
-    return f
-
-
-def gen_d_vector(a,b,gamma,H_max=10, K_max=10, noise=0, dropout=False):
-    temp = np.zeros(2*H_max*K_max)
-    temp2 = np.zeros(2*H_max*K_max)
-    i=0
-    #gaussian = np.random.normal(1, noise)
-    if noise:
-        t = truncnorm(-noise, noise)
-        noise_amt = (1-t.rvs(1)[0])
-    for H in range(-H_max, H_max):
-        for K in range(0, H+1):
-            if H == 0 and K == 0:
-                continue
-            d = gen_d(a, b, gamma, H, K)
-            #if noise:
-            #    temp2[i] = d * noise_amt
-            #else:
-            #    temp2[i] = d
-            if noise:
-                temp2 *= noise_amt
-            temp[i] = d
-            i+=1
-    indices = np.argsort(temp[temp != 0])[:5]#:30
-    if dropout:
-        out = np.array(temp[indices])
-        if True: #np.random.randint(2):
-            start = np.random.randint(15,30)
-            out[start:] = 0 #-5
-        return out
-    else:
-        return np.array(temp[indices])
+        indices = np.argsort(temp)[:, :self.num_spacings] #get the indices of the num_spacings lowest d-spacings for each observation
+        return np.take_along_axis(temp, indices, axis=1) # get the actual lowest d-spacings and return
 
 def gen_input(n):
     #a: 0.3-1.5
     #b: 0.5-2.5
     #gamma: 85-130
-    #return [gen_d_vector(np.random.random(), np.random.random(), np.random.random()*50, 10, 10) for x in range(n)]
-    return [[np.random.random()*1.2+0.3, np.random.random()*2+0.5, np.radians(85+np.random.random() * (130-85))] for x in range(n)]
-
-
-
-if __name__ == '__main__':
     """
-    yTr = np.array(gen_input(10000))
-    xTr = np.array(list(map(lambda x: gen_d_vector(*x), yTr)))
-
-    #xTr = np.array([[np.random.random()* 5] for x in range(1000)])
-    #yTr = np.array([np.sin(x) for x in xTr])
-
-    #model = MLPRegressor( hidden_layer_sizes=(150, 150)
-    #                     ,batch_size=20,
-    #                     activation='relu',
-    #                      solver='adam', max_iter=100, tol=-1,verbose=True, learning_rate='constant', learning_rate_init=1e-3)
-    #model.fit(xTr, yTr)
-
-    scaler = preprocessing.StandardScaler().fit(xTr)
-    xTr = scaler.transform(xTr)
-    model2 = MLPRegressor( hidden_layer_sizes=(150, 150, 100)
-                         ,batch_size=20,
-                         activation='relu',
-                           solver='adam', max_iter=100, tol=-1,verbose=True, learning_rate='constant', learning_rate_init=1e-3)
-    model2.fit(xTr, yTr)
-
-    yTe = np.array(gen_input(1000))
-    xTe = np.array(list(map(lambda x: gen_d_vector(*x), yTe)))
-    xTe_scaled = scaler.transform(xTe)
-    #print(model.score(xTr, yTr))
-    #print(model.score(xTe, yTe))
-
-    #print(np.mean(np.abs(yTe - model.predict(xTe))))
-    #print(np.mean(np.sum(np.abs(yTe - model.predict(xTe)), axis=1)))
-
-    print(model2.score(xTr, yTr))
-    print(model2.score(xTe, yTe))
-
-    print(np.mean(np.abs(yTe - model2.predict(xTe))))
-    print(np.mean(np.sum(np.abs(yTe - model2.predict(xTe)), axis=1)))
-    print(np.mean(np.abs(yTe - model2.predict(xTe)), axis=0))
-
-    #test: 0.65, 1.2, 111
-
-    test_y = np.array([.65, 1.2, np.radians(111)]).reshape(1,-1)
-    test_x =  gen_d_vector(*test_y[0])
-    test_x = scaler.transform(test_x.reshape(1,-1))
+    Generates random vectors of a,b,gamma for use in network training.
+    :param n: Number of observations to generate
+    :return: n x 3 vector of a,b, gamma observations
     """
-    xs = np.array([])
-    ys = np.array([])
-    a = 0.65
-    b = 1.2
-    g = np.radians(111)
-    for M in range(-3, 3):
-        for N in range(-3, 3):
-            #if M == 0 and N == 0:
-            #    continue
-            xs = np.append(xs, M*a + N*b*np.cos(g))
-            ys = np.append(ys, N*b*np.sin(g))
-
-    plt.scatter(xs, ys)
-    plt.scatter(xs+1, ys)
-    plt.show()
+    temp = np.random.random((n,3)) * np.array([1.2, 2, (130-85)]) # produces the range of each value
+    temp += np.array([0.3, 0.5, 85]) # adds the base of each value
+    temp[:,2] = np.radians(temp[:,2]) # Turns gamma into radians
+    return temp
