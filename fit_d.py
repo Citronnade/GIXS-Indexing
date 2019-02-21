@@ -1,20 +1,8 @@
 import numpy as np
 
 
-def gen_d(a,b,gamma,H,K):
-    """
-    Helper function to take in a,b,gamma values or vectors and produce a d-spacing corresponding to a specific H or K.
-    :param a: value of a for the observation
-    :param b: value of b for the observation
-    :param gamma: value of gamma for the observation
-    :param H: value of H to calculate spacing for
-    :param K: value of K to calculate spacing for
-    :return: A single number representing the observed d-spacing for the given a,b,gamma,H,K
-    """
-    return np.sin(gamma) / np.sqrt(H**2/a**2 + K**2/b**2 - 2*H*K*np.cos(gamma) / (a*b))
-
 class dSpaceGenerator:
-    def __init__(self, H_max=10, K_max=10, num_spacings=8):
+    def __init__(self, H_max=10, K_max=10, num_spacings=8, gen_q=False):
         """
         Returns a function that generates a Torch tensor of the vectors.
         Pydoc will create pretty documentation based off these docstrings.
@@ -27,6 +15,7 @@ class dSpaceGenerator:
         self.H_max = H_max
         self.K_max = K_max
         self.num_spacings = num_spacings
+        self.gen_q = gen_q
 
 
     # __call__ is a builtin function that's called when you try to call an object
@@ -55,7 +44,10 @@ class dSpaceGenerator:
         temp[temp==0] = 2000 #sometimes we get a d-spacing of 0, ignore these when sorting
 
         indices = np.argsort(temp)[:, :self.num_spacings] #get the indices of the num_spacings lowest d-spacings for each observation
-        return np.take_along_axis(temp, indices, axis=1) # get the actual lowest d-spacings and return
+        if self.gen_q:
+            return 1 / np.take_along_axis(temp, indices, axis=1)  # get the actual lowest d-spacings and return
+        else:
+            return np.take_along_axis(temp, indices, axis=1)  # get the actual lowest d-spacings and return
 
 def gen_input(n):
     """
@@ -69,4 +61,11 @@ def gen_input(n):
     temp = np.random.random((n,3)) * np.array([1.2, 2, (130-85)]) # produces the range of each value
     temp += np.array([0.3, 0.5, 85]) # adds the base of each value
     temp[:,2] = np.radians(temp[:,2]) # Turns gamma into radians
-    return temp
+    # random a,b between 0.3-2.5, gamma 85-130 degrees
+    temp2 = np.tile(np.random.random((n, 1)) * 2.2, 2) + np.random.random((n,2)) * 0.08
+    temp3 = np.radians(np.random.random((n, 1)) * (130-85))
+    temp4 = np.column_stack((temp2, temp3))
+
+
+
+    return np.concatenate((temp, temp4))

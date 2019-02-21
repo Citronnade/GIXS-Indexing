@@ -61,7 +61,7 @@ class LSTMNet(torch.nn.Module):
         return out
 
 
-def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192):
+def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192, use_qs=False):
     """
     :param num_epochs: Number of epochs to train model for
     :param path: Path to save trained model state dict in
@@ -76,7 +76,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step_size, gamma=gamma_scheduler) # decays the learning rate by a factor of gamma_scheduler every scheduler_step_size epochs
 
-    generator = fit_d.dSpaceGenerator() # generates d-spacing vectors from a,b,gamma vectors
+    generator = fit_d.dSpaceGenerator(gen_q=use_qs) # generates d-spacing vectors from a,b,gamma vectors
     yTr = torch.Tensor(fit_d.gen_input(5000)) # generate y's for scaling
     xTr = torch.Tensor(generator(yTr))  # generate x's for scaling
     scaler = preprocessing.StandardScaler().fit(xTr)  # 0-1 normalization is essential
@@ -119,7 +119,11 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
         # inputs = inputs.unsqueeze(-1)
         optimizer.zero_grad()
         outputs = model(inputs)
+        if i == 5:
+            print("actual: ", labels)
+            print("predicted: ", outputs)
         preds = torch.cat((preds, outputs), 0) # append/concatenate to the empty tenosr
         i += 1
+
 
     print("average test error:", torch.mean(preds - yTe))
