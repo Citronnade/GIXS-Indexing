@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-
 import torch
 from scipy import optimize
 
@@ -16,11 +14,13 @@ def gen_f(generator, ds):
 
 def index(d_inputs, model, scaler=None):
     """
-    Provides a,b,gamma that best indices the provided inputs.
-    :param d_inputs: array of input d spacings, sorted ascending
+
+    :param d_inputs: array of input d spacings, sorted in ascending order
     :param model: callable model to provide first prediction
     :param scaler: a sklearn scaler object that matches the given model
-    :return:
+    :return: An array of shape (1,3) containing [[a,b,gamma]]
+
+    Provides a,b,gamma that best indices the provided inputs.
     """
     generator = dSpaceGenerator()
     f = gen_f(generator, d_inputs)
@@ -32,7 +32,7 @@ def index(d_inputs, model, scaler=None):
     return result.x
 
 
-def main(model_path="model.pth", scaler=None):
+def main(model_path="model.pth", scaler=None, num_spacings=8):
     model = SimpleNet()
     model.load_state_dict(torch.load(model_path))
     model.eval()

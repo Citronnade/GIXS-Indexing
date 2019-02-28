@@ -109,3 +109,10 @@ venv.bak/
 # saved model files
 *.save
 *.pth
+
+# exported things
+*.zip
+
+# emacs autosave
+#*#
+*.*~

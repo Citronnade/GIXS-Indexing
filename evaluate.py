@@ -26,6 +26,8 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
     :param g: True value of gamma (in degrees) to test
     :param model_path: Path to saved model state dict
     :return: None
+
+    Plots the prediced and actual lattice structures for a given true indexing using only the neural network's predictions.
     """
     model = SimpleNet()
     model.load_state_dict(torch.load(model_path)) # load model
@@ -84,9 +86,16 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
 
 def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, scaler=None):
     """
-    Tests model by evaluating it, then running BFGS, on a known input.
+
     :param model_path: Path to model to load from
+    :param a: Value of a to be tested:
+    :param b: Value of b to be tested:
+    :param gamma: Value of gamma to be tested:
+    :param use_qs: Whether the model was trained and should be evaluated using q values as inputs rather than ds:
+    :scaler: An object implementing transform() that normalizes inputs for the neural network.
     :return: None
+
+    Tests performance of a trained model by evaluating it and then running BFGS using a known input.
     """
     model = SimpleNet()
     model.load_state_dict(torch.load(model_path))

@@ -2,16 +2,18 @@ import numpy as np
 
 
 class dSpaceGenerator:
+    """
+    :param H_max: The maximum \|H\| to search over when generating d-spacings
+    :param K_max: The maximum \|K\| to search over when generating d-spacings
+    :param noise: Range of truncated normal, which will have range [-noise, noise].  Currently has no effect.
+    :param dropout: If True, then length of output vector will be truncated with 50% probability.  Currently has no effect.
+    :param num_spacings: The number of d-spacings to be generated for each input.
+    :param gen_q: Whether or not to generate q values instead of d values.
+
+    This class is callable to produce a Torch tensor of d-space inputs.
+    """
+    
     def __init__(self, H_max=10, K_max=10, num_spacings=8, gen_q=False):
-        """
-        Returns a function that generates a Torch tensor of the vectors.
-        Pydoc will create pretty documentation based off these docstrings.
-        :param H_max: The maximum |H| to search over when generating d-spacings
-        :param K_max: The maximum |K| to search over when generating d-spacings
-        :param noise: Range of truncated normal, which will have range [-noise, noise].  Set to zero to disable addition of random noise.  #TODO: make this normally distributed with SD noise
-        :param dropout: If True, then length of output vector will be truncated with 50% probability
-        :return: A function f(a,b,gamma) that returns an array of the 5 highest d-spacings over the given H_max, K_max range for the given parameters.
-        """
         self.H_max = H_max
         self.K_max = K_max
         self.num_spacings = num_spacings
@@ -51,12 +53,13 @@ class dSpaceGenerator:
 
 def gen_input(n):
     """
-    a range: 0.3-1.5
-    b range: 0.5-2.5
-    gamma range: 85-130 (degrees)
-    Generates random vectors of a,b,gamma for use in network training.
     :param n: Number of observations to generate
     :return: n x 3 vector of a,b, gamma observations
+
+    Generates random vectors of a,b,gamma for use in network training.\n
+    a range: 0.3-1.5\n
+    b range: 0.5-2.5\n
+    gamma range: 85-130 (degrees)
     """
     temp = np.random.random((n,3)) * np.array([1.2, 2, (130-85)]) # produces the range of each value
     temp += np.array([0.3, 0.5, 85]) # adds the base of each value
