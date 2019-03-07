@@ -7,6 +7,9 @@ from deep_d import SimpleNet
 from fit_d import dSpaceGenerator
 
 def gen_f(generator, ds):
+    """
+    Returns a function that can be optimized by scipy.optimize.
+    """
     def f(guess):
         guess_ds = generator(guess.reshape(1,-1))
         return np.linalg.norm(guess_ds - ds)

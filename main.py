@@ -26,7 +26,7 @@ def parser_generator():
     parser.add_argument("--num_epochs", type=int, default=75, help="number of epochs to train for")
     parser.add_argument("--gamma_scheduler", type=float, default=0.5, help="factor by which to decay learning rate by")
     parser.add_argument("--lr", type=float, default=1e-4,
-                        help="initial learning rate to use during training (CURRENTLY NOT IMPLEMENTED)")
+                        help="initial learning rate to use during training")
     parser.add_argument("--model_path", help="location to save/load a model state dict from")
     parser.add_argument("operation",
                         help="operation to perform: either TRAIN a new model, EVALUATE an existing model or INDEX observed data",
