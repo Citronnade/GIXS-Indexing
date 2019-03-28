@@ -21,7 +21,7 @@ def index(d_inputs, model, scaler=None):
     :param d_inputs: array of input d spacings, sorted in ascending order
     :param model: callable model to provide first prediction
     :param scaler: a sklearn scaler object that matches the given model
-    :return: An array of shape (1,3) containing [[a,b,gamma]]
+    :return: An array of shape (,3) containing [a,b,gamma]
 
     Provides a,b,gamma that best indices the provided inputs.
     """
@@ -32,7 +32,9 @@ def index(d_inputs, model, scaler=None):
     model.eval()
     guess = model(torch.Tensor(input_d).unsqueeze(0)).detach().numpy()
     result = optimize.minimize(f, guess, options={'disp': True, 'gtol': 1e-8}) #optimize.basinhopping(f, guess)
-    return result.x
+    percent_error = 100 * np.sum((generator(result.x.reshape(1,-1)) - d_inputs) / d_inputs)
+    print(percent_error)
+    return result.x, percent_error
 
 
 def main(model_path="model.pth", scaler=None, num_spacings=8):
@@ -44,7 +46,7 @@ def main(model_path="model.pth", scaler=None, num_spacings=8):
         if not ds:
             break
         ds = np.array([float(x) for x in ds.split(",")]).reshape(1,-1)
-        params = index(ds, model, scaler)
+        params, percent_error = index(ds, model, scaler)
         print("Estimated parameters are ", params)
 
 

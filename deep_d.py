@@ -47,7 +47,7 @@ class SimpleNet(torch.nn.Module):
 
     # Pytorch automatically symbolically differentiates the forward pass with autograd to generate the corresponding backwards pass.  We don't need to do anything!
 
-def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192, use_qs=False, lr=1e-3, num_spacings=8):
+def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192, use_qs=False, lr=1e-3, num_spacings=8, scaler_path="scaler.save"):
     """
     :param num_epochs: Number of epochs to train model for
     :param path: Path to save trained model state dict in
@@ -62,6 +62,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     :Side effects: When training has finished, the final model state is saved into path and a dump of the scaler is saved in "scaler.save"
 
     """
+    print(gamma_scheduler, scheduler_step_size, batch_size, lr, num_spacings, scaler_path)
     model = SimpleNet(num_spacings=num_spacings)
     criterion = nn.MSELoss() # mean squared error loss
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -71,7 +72,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     yTr = torch.Tensor(fit_d.gen_input(5000)) # generate y's for scaling
     xTr = torch.Tensor(generator(yTr))  # generate x's for scaling
     scaler = preprocessing.StandardScaler().fit(xTr)  # 0-1 normalization is essential
-    joblib.dump(scaler, "scaler.save") # save the scaler for use during evaluation
+    joblib.dump(scaler, scaler_path) # save the scaler for use during evaluation
 
     for epoch in range(num_epochs):
         # The primary training loop

@@ -13,10 +13,11 @@ def main():
     if args.operation == "train":
 
         deep_d.train_model(num_epochs=args.num_epochs, path=args.model_path, gamma_scheduler=args.gamma_scheduler,
-                           batch_size=args.batch_size, use_qs=args.use_q, lr=args.lr, num_spacings=args.num_spacings)
+                           batch_size=args.batch_size, use_qs=args.use_q, lr=args.lr, num_spacings=args.num_spacings, scaler_path=args.scaler_path)
 
     elif args.operation == "evaluate":
-        evaluate.evaluate(args.model_path, use_qs=args.use_q, a=args.a, b=args.b, gamma=args.gamma, scaler=scaler)
+        #evaluate.evaluate(args.model_path, use_qs=args.use_q, a=args.a, b=args.b, gamma=args.gamma, scaler=scaler)
+        evaluate.evaluate(**{k: v for k, v in vars(args).items() if v is not None})
     elif args.operation == "index":
         index.main(model_path=args.model_path, scaler=scaler)
 
@@ -35,7 +36,7 @@ def parser_generator():
     parser.add_argument("--b", type=float, help="value of b")
     parser.add_argument("--gamma", type=float, help="value of gamma")
     parser.add_argument("--use_q", action='store_true', help="whether to train in reciprocal space")
-    parser.add_argument("--scaler_path", help="path to scaler dump")
+    parser.add_argument("--scaler_path", default="scaler.save", help="path to scaler dump")
     parser.add_argument("--num_spacings", default=8, help="number of input d-spacings per crystal")
     return parser
 

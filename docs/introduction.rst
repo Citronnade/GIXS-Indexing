@@ -2,8 +2,8 @@
  Introduction
 ==============
 
-    The determination of crystal lattice parameters, or indexing, from 2D powder diffraction data is a mathematically ill-defined problem, which is hard to solve using traditional optimization tecniques.  This software package provides a hybrid neural network/iterative method that performs it quickly and reliably.  This is a modernization of the work done by :cite:`habershon_powder_2004`, which has the same baisc architecture (an artificial neural network followed by local optimization), but we consider specifically the 2D case with any symmetry.
-
+    The determination of crystal lattice parameters, or indexing, from 2D powder diffraction data is a mathematically ill-defined problem, which is hard to solve using traditional optimization tecniques.  This software package provides a hybrid neural network/iterative method that performs it quickly and reliably.  This is a modernization of the work done by :cite:`habershon_powder_2004`, which has the same baisc architecture (an artificial neural network followed by local optimization), but we consider specifically the 2D case with any symmetry
+    The code is applied to indexing grazing-incidence x-ray scattering (GIXS) of molecular thin films, of interest in the rapidly evolving field of organic electronics. Typical problems are low lattice symmetry (monoclinic, triclinic) and novel thin film structures that may depend on the deposition method and the substrate, and are different from the usually known single crystal bulk structures. The method is also suitable for indexing equatorial reflections in fiber diffraction. In either case the lattice parameters can be split up into finding the in-plane surface unit cell with 3 lattice constants, and as a second step determining the other 3 lattice parameters in analyzing the full GIXS pattern. The first step is typically the more difficult - after the in-plane lattice is determined, the out-of-plane lattice parameters can be found comparatively easy.
     
 ================================
  Methods and Model Architecture
