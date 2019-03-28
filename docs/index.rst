@@ -16,7 +16,7 @@ Welcome to 2D Powder indexing's documentation!
    fit_d
    evaluate
    indexing
-   
+   documentation
 	     
 
 Indices and tables

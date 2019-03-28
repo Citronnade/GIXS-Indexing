@@ -1,3 +1,4 @@
 sphinx
-sphinxarg
-sphinxcontrib
+sphinx-argparse
+sphinxcontrib-packages
+sphinxcontrib-bibtex
