@@ -106,6 +106,7 @@ def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, sca
     f = gen_f(generator, known_params) #function to be optimized
     input_d = generator(known_params.reshape(1,-1)) # 1 data point
     print("generated inputs are: ", ",".join(map(str, input_d[0])))
+    old_inputs = input_d
     if scaler:
         input_d = scaler.transform(input_d) # rescale input to be same as in training
     input_d = input_d.reshape(-1)
@@ -117,12 +118,12 @@ def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, sca
     #print(result.x)
     print(result_regular.x)
     print("actual: ", known_params)
-
+    return result_regular, old_inputs[0]
 
     # plot q's as before                                                                                                                                                                     
-    actual_qs = 1 / generator(known_params.reshape(1,-1))
-    pred_qs = 1 / generator(result_regular.x.reshape(1,-1))
-    plt.scatter(actual_qs.reshape(-1), [0.5] * len(actual_qs.reshape(-1)))
-    for q in pred_qs.reshape(-1):
-        plt.axvline(x=q)
-    plt.show()
+    #actual_qs = 1 / generator(known_params.reshape(1,-1))
+    #pred_qs = 1 / generator(result_regular.x.reshape(1,-1))
+    #plt.scatter(actual_qs.reshape(-1), [0.5] * len(actual_qs.reshape(-1)))
+    #for q in pred_qs.reshape(-1):
+    #    plt.axvline(x=q)
+    #plt.show()

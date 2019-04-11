@@ -19,7 +19,7 @@
      <rect>
       <x>15</x>
       <y>15</y>
-      <width>202</width>
+      <width>571</width>
       <height>34</height>
      </rect>
     </property>
@@ -29,7 +29,7 @@
      </font>
     </property>
     <property name="text">
-     <string>d-spacings (nm)</string>
+     <string>d-spacings (nm), sorted in ascending order</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -614,7 +614,7 @@ p, li { white-space: pre-wrap; }
      </font>
     </property>
     <property name="text">
-     <string>gam (rad)</string>
+     <string>gam (deg)</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="d6box">

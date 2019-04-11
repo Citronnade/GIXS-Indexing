@@ -68,7 +68,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step_size, gamma=gamma_scheduler) # decays the learning rate by a factor of gamma_scheduler every scheduler_step_size epochs
 
-    generator = fit_d.dSpaceGenerator(gen_q=use_qs) # generates d-spacing vectors from a,b,gamma vectors
+    generator = fit_d.dSpaceGenerator(gen_q=use_qs, num_spacings=num_spacings) # generates d-spacing vectors from a,b,gamma vectors
     yTr = torch.Tensor(fit_d.gen_input(5000)) # generate y's for scaling
     xTr = torch.Tensor(generator(yTr))  # generate x's for scaling
     scaler = preprocessing.StandardScaler().fit(xTr)  # 0-1 normalization is essential

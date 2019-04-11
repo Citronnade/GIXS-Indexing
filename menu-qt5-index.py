@@ -5,14 +5,19 @@ from PyQt5 import uic
 import torch
 import numpy as np
 from sklearn.externals import joblib
+import traceback
 
 import index
 import deep_d
-
+import evaluate
 
 
 # load the qt gui produced by qt-designer
 Ui_MainWindow, QtBaseClass = uic.loadUiType('menu.ui')
+
+def format_decimal(s):
+    return "{0:.6g}".format(s)
+
 
 class MyApp(QMainWindow):
     # initialize GUI-program connect
@@ -22,9 +27,67 @@ class MyApp(QMainWindow):
         self.ui.setupUi(self)
         # define pushbutton action
         self.ui.calcButton.clicked.connect(self.go)
-        self.ui.modelPathButton.clicked.connect(self.Getfile(self.ui.modelPath, "save", self))
-        self.ui.scalerButton.clicked.connect(self.Getfile( self.ui.scalerPath, "save", self))
+        self.ui.modelPathButton.clicked.connect(self.Getfile(self.ui.modelPath, self))
+        self.ui.scalerButton.clicked.connect(self.Getfile( self.ui.scalerPath, self))
+        self.ui.operation.currentIndexChanged.connect(self.set_operation)
+        self.ANN_params = [self.ui.num_d, self.ui.epochs, self.ui.initLR, self.ui.LRdecay, self.ui.BatchSize]
+        self.d_boxes = [self.ui.d1box, self.ui.d2box, self.ui.d3box, self.ui.d4box, self.ui.d5box, self.ui.d6box, self.ui.d7box, self.ui.d8box]
+        self.ANN_outputs = [self.ui.a_box, self.ui.b_box, self.ui.gam_box, self.ui.error_box]
+        self.set_operation(0) # 0 is train, 1 is index, 2 is evaluate
 
+    def emphasize(self, widget):
+        widget.setStyleSheet(
+            """
+            QTextEdit {
+            border-style: outset; 
+            border-width: 2px; 
+            border-color: green}""")
+
+    def deemphasize(self, widget):
+        widget.setStyleSheet("QTextEdit {}")
+
+    def set_operation(self, op):
+        self.op = op
+        if op == 0: # train
+            for x in self.ANN_params:
+                x.setReadOnly(False)
+                self.emphasize(x)
+                #x.setDisabled(False)
+            for x in self.d_boxes:
+                x.setReadOnly(True)
+                self.deemphasize(x)
+                #x.setDisabled(True)
+            for x in self.ANN_outputs:
+                x.setReadOnly(True)
+                self.deemphasize(x)
+                #x.setDisabled(True)
+
+        elif op == 1: # index
+            for x in self.ANN_params:
+                x.setReadOnly(True)
+                self.deemphasize(x)
+                #x.setDisabled(True)
+            for x in self.d_boxes:
+                x.setReadOnly(False)
+                self.emphasize(x)
+                #x.setDisabled(False)
+            for x in self.ANN_outputs:
+                x.setReadOnly(True)
+                self.deemphasize(x)
+                #x.setDisabled(True)
+        elif op == 2: # evaluate
+            for x in self.ANN_params:
+                x.setReadOnly(True)
+                self.deemphasize(x)
+                #x.setDisabled(True)
+            for x in self.d_boxes:
+                x.setReadOnly(True)
+                #x.setDisabled(True)
+                self.deemphasize(x)
+            for x in self.ANN_outputs:
+                x.setReadOnly(False)
+                self.emphasize(x)
+                #x.setDisabled(False)
 
     def go(self):
         try:
@@ -35,20 +98,19 @@ class MyApp(QMainWindow):
             elif operation == "index":
                 self.Index()
             elif operation == "evaluate":
-                pass
+                self.evaluate()
             else:
                 raise Exception
         except Exception as e:
             self.ui.error_toast.setText("Error occurred: {}".format(repr(e)))
-            print(e)
+            traceback.print_exc()
     class Getfile:
         # puts the file path into a textedit once clicking a button
-        def __init__(self, textbox, dialog_type, app):
-            self.dialog_type = dialog_type
+        def __init__(self, textbox, app):
             self.textbox = textbox
             self.app = app
         def __call__(self):
-            if self.dialog_type == "open":
+            if self.app.op == 1 or self.app.op == 2: #indexing and evaluation
                 # no warning when clicking existing file
                 method = QFileDialog.getOpenFileName
             else:
@@ -77,6 +139,29 @@ class MyApp(QMainWindow):
             return
         deep_d.train_model(num_epochs=epochs, path=modelPath, gamma_scheduler=LRdecay, batch_size=batch_size, use_qs=use_q, lr=initLR, num_spacings=num_d, scaler_path=scalerPath)
 
+    def evaluate(self):
+        a = float(self.ui.a_box.toPlainText())
+        b = float(self.ui.b_box.toPlainText())
+        gamma = float(self.ui.gam_box.toPlainText())
+        scalerPath = self.ui.scalerPath.text()
+        model_path = self.ui.modelPath.text()
+        try:
+            scaler = joblib.load(scalerPath)
+        except FileNotFoundError as e:
+            print(e)
+            print(e.filename)
+            self.ui.error_toast.setText("Scaler file not found: {}".format(e.filename))
+            return
+        result, ds = evaluate.evaluate(model_path, a, b, gamma, scaler=scaler)
+        self.ui.a_box.setText(str(format_decimal(result.x[0])))
+        self.ui.b_box.setText(str(format_decimal(result.x[1])))
+        self.ui.gam_box.setText(str(format_decimal(np.degrees(result.x[2]))))
+        self.ui.error_box.setText(format_decimal(100 * np.abs(1 - np.linalg.norm((result.x - np.array([a,b,gamma])) / np.array([a,b,gamma])))))
+
+        print(ds)
+        for i,d in enumerate(self.d_boxes):
+            d.setText(format_decimal(ds[i]))
+
     def Index(self):
         
         # d-spacings <=8
@@ -88,19 +173,10 @@ class MyApp(QMainWindow):
         d6 = float(self.ui.d6box.toPlainText())
         d7 = float(self.ui.d7box.toPlainText())
         d8 = float(self.ui.d8box.toPlainText())
-        
-        # input ANN params
-        num_d = int(self.ui.num_d.toPlainText())
-        epochs = int(self.ui.epochs.toPlainText())
-        initLR = float(self.ui.initLR.toPlainText())
-        LRdecay = float(self.ui.LRdecay.toPlainText())
-        batch_size = float(self.ui.BatchSize.toPlainText())
-        #modelPath = self.ui.modelPath.toPlainText()
-        
         # operation = self.ui.operation.currentText()
         #use_q = self.ui.use_q.currentText()
         scalerPath = self.ui.scalerPath.text()
-        
+
         # run the ANN ?
         try:
             scaler = joblib.load(scalerPath)
@@ -122,14 +198,14 @@ class MyApp(QMainWindow):
         # output result 
         lattice_a = result[0]
         lattice_b = result[1]
-        lattice_gam = result[2]
-        a_string = str(lattice_a)
+        lattice_gam = np.degrees(result[2])
+        a_string = format_decimal(lattice_a)
         self.ui.a_box.setText(a_string)
-        b_string = str(lattice_b)
+        b_string = format_decimal(lattice_b)
         self.ui.b_box.setText(b_string)
-        gam_string = str(lattice_gam)
+        gam_string = format_decimal(lattice_gam)
         self.ui.gam_box.setText(gam_string)
-        error_string = str(percent_error)
+        error_string = format_decimal(percent_error)
         self.ui.error_box.setText(error_string)
 # main
 if __name__ == '__main__':
