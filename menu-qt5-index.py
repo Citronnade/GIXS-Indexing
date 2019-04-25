@@ -30,6 +30,7 @@ class MyApp(QMainWindow):
         self.ui.modelPathButton.clicked.connect(self.Getfile(self.ui.modelPath, self))
         self.ui.scalerButton.clicked.connect(self.Getfile( self.ui.scalerPath, self))
         self.ui.operation.currentIndexChanged.connect(self.set_operation)
+        self.ui.num_d.textChanged.connect(self.set_num_ds)
         self.ANN_params = [self.ui.num_d, self.ui.epochs, self.ui.initLR, self.ui.LRdecay, self.ui.BatchSize]
         self.d_boxes = [self.ui.d1box, self.ui.d2box, self.ui.d3box, self.ui.d4box, self.ui.d5box, self.ui.d6box, self.ui.d7box, self.ui.d8box]
         self.ANN_outputs = [self.ui.a_box, self.ui.b_box, self.ui.gam_box, self.ui.error_box]
@@ -46,6 +47,22 @@ class MyApp(QMainWindow):
     def deemphasize(self, widget):
         widget.setStyleSheet("QTextEdit {}")
 
+    def set_num_ds(self):
+        num = self.ui.num_d.toPlainText()
+        try:
+            num = int(num)
+        except ValueError:
+            self.ui.error_toast.setText("Please enter a positive integer for # of d-spacings.")
+            return
+        if num < 1 or num > 8:
+            self.ui.error_toast.setText("Only 1-8 d-spacings supported right now.")
+            return
+        self.ui.error_toast.clear()
+        for x in self.d_boxes: # reset hiding
+            x.show()
+        if self.op == 1: #only hide when indexing
+            for x in self.d_boxes[num:]: # hide the ones we don't want
+                x.hide()
     def set_operation(self, op):
         self.op = op
         if op == 0: # train
@@ -61,7 +78,8 @@ class MyApp(QMainWindow):
                 x.setReadOnly(True)
                 self.deemphasize(x)
                 #x.setDisabled(True)
-
+            self.ui.num_d.setReadOnly(False)
+            self.emphasize(self.ui.num_d)
         elif op == 1: # index
             for x in self.ANN_params:
                 x.setReadOnly(True)
@@ -75,6 +93,8 @@ class MyApp(QMainWindow):
                 x.setReadOnly(True)
                 self.deemphasize(x)
                 #x.setDisabled(True)
+            self.ui.num_d.setReadOnly(False)
+            self.emphasize(self.ui.num_d)
         elif op == 2: # evaluate
             for x in self.ANN_params:
                 x.setReadOnly(True)
@@ -89,6 +109,9 @@ class MyApp(QMainWindow):
                 self.emphasize(x)
                 #x.setDisabled(False)
 
+            self.ui.num_d.setReadOnly(False)
+            self.emphasize(self.ui.num_d)
+        self.set_num_ds()
     def go(self):
         try:
             operation = self.ui.operation.currentText() # get combobox type
@@ -143,6 +166,7 @@ class MyApp(QMainWindow):
         a = float(self.ui.a_box.toPlainText())
         b = float(self.ui.b_box.toPlainText())
         gamma = float(self.ui.gam_box.toPlainText())
+        num_d = int(self.ui.num_d.toPlainText())
         scalerPath = self.ui.scalerPath.text()
         model_path = self.ui.modelPath.text()
         try:
@@ -152,14 +176,14 @@ class MyApp(QMainWindow):
             print(e.filename)
             self.ui.error_toast.setText("Scaler file not found: {}".format(e.filename))
             return
-        result, ds = evaluate.evaluate(model_path, a, b, gamma, scaler=scaler)
+        result, ds = evaluate.evaluate(model_path, a, b, gamma, scaler=scaler, num_spacings=num_d)
         self.ui.a_box.setText(str(format_decimal(result.x[0])))
         self.ui.b_box.setText(str(format_decimal(result.x[1])))
         self.ui.gam_box.setText(str(format_decimal(np.degrees(result.x[2]))))
         self.ui.error_box.setText(format_decimal(100 * np.abs(1 - np.linalg.norm((result.x - np.array([a,b,gamma])) / np.array([a,b,gamma])))))
 
         print(ds)
-        for i,d in enumerate(self.d_boxes):
+        for i,d in enumerate(self.d_boxes[:num_d]):
             d.setText(format_decimal(ds[i]))
 
     def Index(self):
@@ -176,7 +200,7 @@ class MyApp(QMainWindow):
         # operation = self.ui.operation.currentText()
         #use_q = self.ui.use_q.currentText()
         scalerPath = self.ui.scalerPath.text()
-
+        num_d = int(self.ui.num_d.toPlainText())
         # run the ANN ?
         try:
             scaler = joblib.load(scalerPath)
@@ -185,14 +209,14 @@ class MyApp(QMainWindow):
             print(e.filename)
             self.ui.error_toast.setText("Scaler file not found: {}".format(e.filename))
             return
-        model = deep_d.SimpleNet()
+        model = deep_d.SimpleNet(num_spacings=num_d)
         path = self.ui.modelPath.text()
         try:
             model.load_state_dict(torch.load(path))
         except FileNotFoundError as e:
             self.ui.error_toast.setText("Model path file not found: {}".format(e.filename))
             return
-        result, percent_error = index.index(np.array([d1, d2, d3, d4, d5, d6, d7, d8]).reshape(1,-1), model, scaler=scaler)
+        result, percent_error = index.index(np.array([d1, d2, d3, d4, d5, d6, d7, d8][:num_d]).reshape(1,-1), model, scaler=scaler)
         # results i an array of shape (,3)
         print(result)
         # output result 

@@ -105,6 +105,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     test_dataloader = torch.utils.data.DataLoader(test_dataset)
 
     torch.save(model.state_dict(), path)  # save model weights to a file to be loaded later
+    torch.save({'model_' + str(num_spacings): model.state_dict(), 'scaler_' + str(num_spacings): scaler}, "test.pth")
     model.eval()  # make sure to set model to eval mode before any predictions--batchnorm has different behavior
     preds = torch.Tensor() # an empty tensor
     i = 0

@@ -84,7 +84,7 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
     plt.show()
 
 
-def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, scaler=None, **kwargs):
+def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, scaler=None, num_spacings=8, **kwargs):
     """
 
     :param model_path: Path to model to load from
@@ -97,12 +97,12 @@ def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, sca
 
     Tests performance of a trained model by evaluating it and then running BFGS using a known input.
     """
-    model = SimpleNet()
+    model = SimpleNet(num_spacings=num_spacings)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
     known_params = np.array([a, b, np.radians(gamma)]).reshape(1,-1) # Only used for comparison later
-    generator = dSpaceGenerator(gen_q=use_qs) # use for mapping
+    generator = dSpaceGenerator(gen_q=use_qs, num_spacings=num_spacings) # use for mapping
     f = gen_f(generator, known_params) #function to be optimized
     input_d = generator(known_params.reshape(1,-1)) # 1 data point
     print("generated inputs are: ", ",".join(map(str, input_d[0])))

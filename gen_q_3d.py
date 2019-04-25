@@ -1,6 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
+import pandas as pd
+
+def read_qs(filename):
+    df = pd.read_csv(filename)
+    return np.array(df['qxy'], df['qz'])
 
 # in plane, already done
 aspar = 1.3 #a*, parallel
@@ -48,7 +53,7 @@ def gen_q(dasperp, dbsperp, cs, debug=False):
         a = np.linalg.norm(A)
         b = np.linalg.norm(B)
         c = np.linalg.norm(C)
-        alf = np.degrees(np.arccos((B.T@C) / (b*c)))
+        alf = np.degrees(np.arccos((B.T@C) / (b*c))) # @ is matrix multiplication, * is elementwise (kronecker product)
         bet = np.degrees(np.arccos((C.T@A) / (c*a)))
         gam = np.degrees(np.arccos((A.T@B) / (a*b)))
 

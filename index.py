@@ -25,7 +25,7 @@ def index(d_inputs, model, scaler=None):
 
     Provides a,b,gamma that best indices the provided inputs.
     """
-    generator = dSpaceGenerator()
+    generator = dSpaceGenerator(num_spacings=len(d_inputs))
     f = gen_f(generator, d_inputs)
     if scaler:
         input_d = scaler.transform(d_inputs).reshape(-1)
