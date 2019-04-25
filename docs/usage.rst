@@ -26,3 +26,8 @@ List of command line arguments:
    :module: main
    :func: parser_generator
    :prog: main
+
+Additionally, a GUI is available.
+
+.. figure:: gui.png
+   :alt: GUI diagram
