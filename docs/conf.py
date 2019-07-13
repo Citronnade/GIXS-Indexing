@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
     'sphinxarg.ext',
     'sphinxcontrib.bibtex'
 ]
