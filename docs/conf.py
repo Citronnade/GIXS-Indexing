@@ -29,7 +29,7 @@ version = ''
 # The full version, including alpha/beta/rc tags
 release = ''
 
-autodoc_mock_imports= ['numpy', 'scipy', 'torch', 'sklearn']
+autodoc_mock_imports= ['numpy', 'scipy', 'torch', 'sklearn', 'matplotlib']
 
 # -- General configuration ---------------------------------------------------
 
