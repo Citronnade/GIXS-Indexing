@@ -6,7 +6,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 import fit_d
-
+import utils
 
 class SimpleNet(torch.nn.Module):
     """
@@ -17,6 +17,7 @@ class SimpleNet(torch.nn.Module):
 
     def __init__(self, num_spacings=8):
         super(SimpleNet, self).__init__()
+        self.num_spacings = num_spacings
         self.linear1 = nn.Linear(num_spacings, 350) # input linear layer
         self.bn1 = nn.BatchNorm1d(350)  # batchnorm layers aid in training.  The dimension of the input here (350) must match the dimension of the output of the previous layer.
         self.hidden1 = nn.Linear(350, 350)
@@ -47,7 +48,7 @@ class SimpleNet(torch.nn.Module):
 
     # Pytorch automatically symbolically differentiates the forward pass with autograd to generate the corresponding backwards pass.  We don't need to do anything!
 
-def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192, use_qs=False, lr=1e-3, num_spacings=8, scaler_path="scaler.save"):
+def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler=0.25, scheduler_step_size=20, batch_size=192, use_qs=False, lr=1e-3, num_spacings=8):
     """
     :param num_epochs: Number of epochs to train model for
     :param path: Path to save trained model state dict in
@@ -62,7 +63,7 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     :Side effects: When training has finished, the final model state is saved into path and a dump of the scaler is saved in "scaler.save"
 
     """
-    print(gamma_scheduler, scheduler_step_size, batch_size, lr, num_spacings, scaler_path)
+    print(gamma_scheduler, scheduler_step_size, batch_size, lr, num_spacings)
     model = SimpleNet(num_spacings=num_spacings)
     criterion = nn.MSELoss() # mean squared error loss
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -72,8 +73,8 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     yTr = torch.Tensor(fit_d.gen_input(5000)) # generate y's for scaling
     xTr = torch.Tensor(generator(yTr))  # generate x's for scaling
     scaler = preprocessing.StandardScaler().fit(xTr)  # 0-1 normalization is essential
-    joblib.dump(scaler, scaler_path) # save the scaler for use during evaluation
-
+    #joblib.dump(scaler, scaler_path) # save the scaler for use during evaluation
+    print(scaler)
     for epoch in range(num_epochs):
         # The primary training loop
         running_loss = 0
@@ -104,8 +105,9 @@ def train_model(num_epochs=75, path="model.pth", use_cuda=False, gamma_scheduler
     test_dataset = torch.utils.data.TensorDataset(xTe, yTe)
     test_dataloader = torch.utils.data.DataLoader(test_dataset)
 
-    torch.save(model.state_dict(), path)  # save model weights to a file to be loaded later
-    torch.save({'model_' + str(num_spacings): model.state_dict(), 'scaler_' + str(num_spacings): scaler}, "test.pth")
+    #torch.save(model.state_dict(), path)  # save model weights to a file to be loaded later
+    #torch.save({'model_' + str(num_spacings): model.state_dict(), 'scaler_' + str(num_spacings): scaler}, path)
+    utils.save_model_scaler(model, scaler, path)
     model.eval()  # make sure to set model to eval mode before any predictions--batchnorm has different behavior
     preds = torch.Tensor() # an empty tensor
     i = 0

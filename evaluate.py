@@ -8,17 +8,10 @@ from scipy import optimize
 from deep_d import SimpleNet
 from fit_d import dSpaceGenerator
 
+from fine_optimize import gen_f, fine_optimize
+import utils
 
-def gen_f(generator, known_params):
-    # returns a function that can be minimized with scipy.optimize
-    def f(guess):
-        guess_ds = generator(guess.reshape(1,-1))
-        return np.linalg.norm(guess_ds - generator(known_params.reshape(1,-1))) # L2 distance between observed and calculated qs
-
-    return f
-
-
-def plot_results(a, b, g, scaler, model_path="model.pth"):
+def plot_results(a, b, g, model_path="model.pth", num_d=8):
     """
 
     :param a: True value of a to test
@@ -27,10 +20,12 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
     :param model_path: Path to saved model state dict
     :return: None
 
-    Plots the prediced and actual lattice structures for a given true indexing using only the neural network's predictions.
+    Plots the predicted and actual lattice structures for a given true indexing using only the neural network's predictions.
     """
     model = SimpleNet()
-    model.load_state_dict(torch.load(model_path)) # load model
+    m = utils.load_model_scaler(model_path, num_d)
+    model.load_state_dict(m['model'])
+    scaler = m['scaler']
     model.eval() # set model to eval for batchnorm
     generator = dSpaceGenerator()
     # generate empty arrays to store plotting points
@@ -38,8 +33,10 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
     ys = np.array([])
     xs2 = np.array([])
     ys2 = np.array([])
-
-    known_y = np.array([a, b, np.radians(g)]).reshape(1,-1) # the true value to plot
+    xs3 = np.array([])
+    ys3 = np.array([])
+    g = np.radians(g)
+    known_y = np.array([a, b, g]).reshape(1,-1) # the true value to plot
     known_x = generator(known_y)
 
     known_x = scaler.transform(known_x.reshape(1,-1))
@@ -54,10 +51,18 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
     print("params:", predicted_params)
     a2 = predicted_params[0]
     b2 = predicted_params[1]
-    g2 = predicted_params[2]
+    g2 = np.radians(predicted_params[2])
+    #g2 = np.degrees(predicted_params[2])
+    #predicted_params[2] = np.degrees(predicted_params[2])
+
+    a3, b3, g3 = evaluate(model, a, b, np.degrees(g))[0].x
+    print("after fitting:", a3, b3, g3)
+
     # plotting the lattices
+    print("into actual_qs:", np.array([a,b,g]).reshape(1,-1))
     actual_qs = 1 / generator(np.array([a, b, g]).reshape(1, -1))
     pred_qs = 1 / generator(predicted_params.reshape(1, -1))
+    fit_qs = 1 / generator(np.array([a3, b3, g3]).reshape(1, -1))
     for M in range(-3, 3):
         for N in range(-3, 3):
             # if M == 0 and N == 0:
@@ -70,24 +75,42 @@ def plot_results(a, b, g, scaler, model_path="model.pth"):
             #    continue
             xs2 = np.append(xs2, M * a2 + N * b2 * np.cos(g2))
             ys2 = np.append(ys2, N * b2 * np.sin(g2))
+    for M in range(-3, 3):
+        for N in range(-3, 3):
+            # if M == 0 and N == 0:
+            #    continue
+            xs3 = np.append(xs3, M * a3 + N * b3 * np.cos(g3))
+            ys3 = np.append(ys3, N * b3 * np.sin(g3))
+    #"""
 
-    plt.scatter(xs, ys)
-    plt.scatter(xs2, ys2)
-    plt.show()
+    fig, axs = plt.subplots(2)
 
-    plt.clf()
+    axs[0].scatter(xs, ys)
+    axs[0].scatter(xs2, ys2, c='red')
+    axs[0].scatter(xs3, ys3, s=4, c='orange', marker='*')
+    #axs[0].plt.show()
+    #axs[0].plt.waitforbuttonpress()
+    #axs[0].plt.clf()
+    #"""
+    print("a,b,g:", a, b, g)
+    print("predicted params:", predicted_params)
+    print("actual_qs:", actual_qs)
+    print("pred_qs:", pred_qs)
+
     # plot q values
     print(actual_qs.shape)
-    plt.scatter(actual_qs.reshape(-1), [0.5] * len(actual_qs.reshape(-1)))
+    axs[1].scatter(actual_qs.reshape(-1), [0.5] * len(actual_qs.reshape(-1)))
     for q in pred_qs.reshape(-1):
-        plt.axvline(x=q)
+        axs[1].axvline(x=q)
+    for q in fit_qs.reshape(-1):
+        axs[1].axvline(x=q, color='orange')
     plt.show()
 
 
-def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, scaler=None, num_spacings=8, **kwargs):
+def evaluate(model, a=0.65, b=1.2, gamma=111, use_qs=False, scaler=None, **kwargs):
     """
 
-    :param model_path: Path to model to load from
+    :param model: Model to use to evaluate
     :param a: Value of a to be tested:
     :param b: Value of b to be tested:
     :param gamma: Value of gamma to be tested:
@@ -97,12 +120,10 @@ def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, sca
 
     Tests performance of a trained model by evaluating it and then running BFGS using a known input.
     """
-    model = SimpleNet(num_spacings=num_spacings)
-    model.load_state_dict(torch.load(model_path))
     model.eval()
 
     known_params = np.array([a, b, np.radians(gamma)]).reshape(1,-1) # Only used for comparison later
-    generator = dSpaceGenerator(gen_q=use_qs, num_spacings=num_spacings) # use for mapping
+    generator = dSpaceGenerator(gen_q=use_qs, num_spacings=model.num_spacings) # use for mapping
     f = gen_f(generator, known_params) #function to be optimized
     input_d = generator(known_params.reshape(1,-1)) # 1 data point
     print("generated inputs are: ", ",".join(map(str, input_d[0])))
@@ -112,8 +133,8 @@ def evaluate(model_path="model.pth", a=0.65, b=1.2, gamma=111, use_qs=False, sca
     input_d = input_d.reshape(-1)
     guess = model(torch.Tensor(input_d).unsqueeze(0)).detach().numpy()
     print("guess:", guess)
-    result_regular = optimize.minimize(f, guess, options={'disp': True, 'gtol': 1e-8}) # regular BFGS optimization
-    #result = optimize.basinhopping(f, guess) # BFGS with basinhopping to find global minimum
+    result_regular = fine_optimize(f, guess)
+    #result_regulara = optimize.basinhopping(f, guess) # BFGS with basinhopping to find global minimum
 
     #print(result.x)
     print(result_regular.x)

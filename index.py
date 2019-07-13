@@ -6,14 +6,7 @@ from scipy import optimize
 from deep_d import SimpleNet
 from fit_d import dSpaceGenerator
 
-def gen_f(generator, ds):
-    """
-    Returns a function that can be optimized by scipy.optimize.
-    """
-    def f(guess):
-        guess_ds = generator(guess.reshape(1,-1))
-        return np.linalg.norm(guess_ds - ds)
-    return f
+from fine_optimize import gen_f, fine_optimize
 
 def index(d_inputs, model, scaler=None):
     """
@@ -25,15 +18,21 @@ def index(d_inputs, model, scaler=None):
 
     Provides a,b,gamma that best indices the provided inputs.
     """
-    generator = dSpaceGenerator(num_spacings=len(d_inputs))
-    f = gen_f(generator, d_inputs)
+
+    d_inputs = d_inputs.ravel().reshape(1,-1)
+    print(d_inputs)
+    print(len(d_inputs), d_inputs.shape)
+    generator = dSpaceGenerator(num_spacings=d_inputs.shape[1])
+    f = gen_f(generator, d_inputs, is_index=True)
     if scaler:
         input_d = scaler.transform(d_inputs).reshape(-1)
     model.eval()
     guess = model(torch.Tensor(input_d).unsqueeze(0)).detach().numpy()
-    result = optimize.minimize(f, guess, options={'disp': True, 'gtol': 1e-8}) #optimize.basinhopping(f, guess)
+    print(guess)
+    result = fine_optimize(f, guess)
     percent_error = 100 * np.sum((generator(result.x.reshape(1,-1)) - d_inputs) / d_inputs)
     print(percent_error)
+    print(generator(result.x.reshape(1,-1)))
     return result.x, percent_error
 
 

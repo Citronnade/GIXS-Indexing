@@ -17,6 +17,7 @@ def main():
 
     elif args.operation == "evaluate":
         #evaluate.evaluate(args.model_path, use_qs=args.use_q, a=args.a, b=args.b, gamma=args.gamma, scaler=scaler)
+        #TODO: this doesn't work.
         evaluate.evaluate(**{k: v for k, v in vars(args).items() if v is not None})
     elif args.operation == "index":
         index.main(model_path=args.model_path, scaler=scaler)

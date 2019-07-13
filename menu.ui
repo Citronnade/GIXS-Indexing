@@ -943,45 +943,6 @@ p, li { white-space: pre-wrap; }
      <string>Load file</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="scalerPath">
-    <property name="geometry">
-     <rect>
-      <x>1228</x>
-      <y>847</y>
-      <width>197</width>
-      <height>29</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_23">
-    <property name="geometry">
-     <rect>
-      <x>1228</x>
-      <y>797</y>
-      <width>95</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Scaler path</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="scalerButton">
-    <property name="geometry">
-     <rect>
-      <x>1369</x>
-      <y>797</y>
-      <width>131</width>
-      <height>40</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Load file</string>
-    </property>
-   </widget>
    <widget class="QTextEdit" name="BatchSize">
     <property name="geometry">
      <rect>
@@ -1059,7 +1020,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1515</width>
-     <height>36</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
